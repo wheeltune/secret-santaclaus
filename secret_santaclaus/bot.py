@@ -90,8 +90,13 @@ def cancel(message):
 def my_interests(message):
     user = database.find_user(telegram_id=message.from_user.id)
     event = database.find_event(1)
+
     bot.send_message(message.chat.id, 'Твои пожелания:')
-    bot.send_message(message.chat.id, event.find_interests(user))
+    interests = event.find_interests(user)
+    if interests is None:
+        bot.send_message(message.chat.id, 'Ты пока не отметил свои пожелания')
+    else:
+        bot.send_message(message.chat.id, interests)
 
 
 @message_handler(commands=['santa_interests'])
@@ -102,7 +107,11 @@ def santa_interests(message):
     addressee_user = event.find_victim(user)
 
     bot.send_message(message.chat.id, 'Пожелания для санты:')
-    bot.send_message(message.chat.id, event.find_interests(addressee_user))
+    interests = event.find_interests(addressee_user)
+    if interests is None:
+        bot.send_message(message.chat.id, 'Пожеланий пока нет(')
+    else:
+        bot.send_message(message.chat.id, interests)
 
 
 @message_handler(commands=['set_interests'])
@@ -121,14 +130,15 @@ def do_set_interests(message):
 
     user = database.find_user(telegram_id=message.from_user.id)
     event = database.find_event(1)
-    addressee_user = event.find_victim(user)
 
     event.save_interests(user, message.text)
     bot.send_message(message.chat.id, 'Понял, принял, записал')
     states[message.from_user.id] = State.NONE
 
-    bot.send_message(addressee_user.telegram_id, 'Обновились пожелания для санты:')
-    bot.send_message(addressee_user.telegram_id, event.find_interests(addressee_user))
+    # addressee_user = event.find_victim(user)
+    # if addressee_user is not None:
+    #     bot.send_message(addressee_user.telegram_id, 'Обновились пожелания для санты:')
+    #     bot.send_message(addressee_user.telegram_id, event.find_interests(addressee_user))
 
 
 @message_handler(commands=['participants'])
