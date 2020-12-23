@@ -47,6 +47,13 @@ def is_authorized(func):
     return wrapped_func
 
 
+def cancel_state(func):
+    def wrapped_func(message):
+        states[message.from_user.id] = State.NONE
+        func(message)
+    return wrapped_func
+
+
 def is_admin(func):
     def wrapped_func(message):
         user = database.find_user(telegram_id=message.from_user.id)
@@ -81,12 +88,14 @@ def addressee(message):
 
 @message_handler(commands=['cancel'])
 @is_authorized
+@cancel_state
 def cancel(message):
-    states[message.from_user.id] = State.NONE
+    pass
 
 
 @message_handler(commands=['my_interests'])
 @is_authorized
+@cancel_state
 def my_interests(message):
     user = database.find_user(telegram_id=message.from_user.id)
     event = database.find_event(1)
@@ -101,6 +110,7 @@ def my_interests(message):
 
 @message_handler(commands=['santa_interests'])
 @is_authorized
+@cancel_state
 def santa_interests(message):
     user = database.find_user(telegram_id=message.from_user.id)
     event = database.find_event(1)
@@ -116,6 +126,7 @@ def santa_interests(message):
 
 @message_handler(commands=['set_interests'])
 @is_authorized
+@cancel_state
 def set_interests(message):
     bot.send_message(message.chat.id, 'Напиши свои пожелания, а я сообщю о них санте (только текстом)')
     states[message.from_user.id] = State.INTERESTS
@@ -135,14 +146,19 @@ def do_set_interests(message):
     bot.send_message(message.chat.id, 'Понял, принял, записал')
     states[message.from_user.id] = State.NONE
 
-    # addressee_user = event.find_victim(user)
-    # if addressee_user is not None:
-    #     bot.send_message(addressee_user.telegram_id, 'Обновились пожелания для санты:')
-    #     bot.send_message(addressee_user.telegram_id, event.find_interests(addressee_user))
+    addressee_user = event.find_victim(user)
+    if addressee_user is not None:
+        bot.send_message(addressee_user.telegram_id, 'Обновились пожелания для санты:')
+        interests = event.find_interests(addressee_user)
+        if interests is None:
+            bot.send_message(addressee_user.telegram_id, 'Пожеланий пока нет(')
+        else:
+            bot.send_message(addressee_user.telegram_id, interests)
 
 
 @message_handler(commands=['participants'])
 @is_admin
+@cancel_state
 def participants(message):
     event = database.find_event(1)
 
@@ -158,6 +174,7 @@ def participants(message):
 
 @message_handler(commands=['build_victims'])
 @is_admin
+@cancel_state
 def build_victims(message):
     event = database.find_event(1)
 
@@ -173,6 +190,7 @@ def build_victims(message):
 
 @message_handler(commands=['approve'])
 @is_admin
+@cancel_state
 def approve(message):
     bot.send_message(message.chat.id, 'Скинь контакт или перешли сообщение')
     states[message.from_user.id] = State.APPROVE
@@ -206,5 +224,6 @@ def do_approve(message):
 
 @message_handler(func=lambda message: True)
 @is_authorized
+@cancel_state
 def unknown(message):
     bot.send_message(message.chat.id, congratulations.get_random(), parse_mode='html')

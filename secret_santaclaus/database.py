@@ -17,32 +17,33 @@ connection = psycopg2.connect(
 class Model:
 
     @classmethod
-    def _insert(cls, table, data, update_data):
+    def _insert(cls, table, data, update_data, constraint):
+        columns_count = len(data)
         columns, values = zip(*data)
         columns = map(str, columns)
         values = list(map(str, values))
 
-        if update_data == None
-            conflict_query = 'NOTHING'
+        if update_data == None:
+            conflict_query = 'DO NOTHING'
         else:
-            update_column, update_values = zip(*update_data)
-            strs = map(lambda: '_ = %s')
+            update_columns, update_values = zip(*update_data)
+            strs = map(lambda _: '{} = %s'.format(_), update_columns)
             values.extend(update_values)
-            conflict_query = 'UPDATE {}'.format(', '.join(strs))
+            conflict_query = '({}) DO UPDATE SET {}'.format(','.join(constraint), ', '.join(strs))
         query = 'INSERT INTO {} ({}) VALUES ({}) ON CONFLICT {}'.format(table,
-                                                                        ','.join(columns), ','.join(['%s'] * len(values)),
+                                                                        ','.join(columns), ','.join(['%s'] * columns_count),
                                                                         conflict_query)
         connection.cursor().execute(query, values)
 
     @classmethod
-    def insert_one(cls, table, data, update_data=None):
-        cls._insert(table, data, on_conflict)
+    def insert_one(cls, table, data, update_data=None, constraint=None):
+        cls._insert(table, data, update_data, constraint)
         connection.commit()
 
     @classmethod
-    def insert_all(cls, table, data_list, update_data=None):
+    def insert_all(cls, table, data_list, update_data=None, constraint=None):
         for data in data_list:
-            cls._insert(table, data)
+            cls._insert(table, data, update_data, constraint)
         connection.commit()
 
     @classmethod
@@ -195,7 +196,7 @@ class Event(Model):
     def save_interests(self, user, interests):
         query = 'INSERT INTO interests (event_id, user_id, interests) VALUES (%s, %s) ON CONFLICT DO UPDATE'
         data = [('event_id', self.id), ('user_id', user.id), ('interests', interests)]
-        self.insert_one('interests', data, [('interests', interests)])
+        self.insert_one('interests', data, [('interests', interests)], ('event_id', 'user_id'))
 
 
 class Database:
