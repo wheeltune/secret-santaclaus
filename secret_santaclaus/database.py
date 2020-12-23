@@ -137,7 +137,7 @@ class Database:
                 ('second_name', telegram_user.last_name)]
 
         self._insert('users', data)
-        return self.find_user(telegram_user)
+        return self.find_user(telegram_id=telegram_user.id)
 
     def create_event(self, name):
         data = [('name', name)]
