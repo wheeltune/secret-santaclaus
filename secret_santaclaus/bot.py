@@ -73,7 +73,7 @@ def addressee(message):
 
     addressee_user = event.find_victim(user)
     if addressee_user is None:
-        bot.send_message(message.chat.id, 'Похоже, что ещё не все собрались, нужно немного подождать. Я скажу, когда все будет готово')
+        bot.send_message(message.chat.id, 'Похоже, что ещё не всё готово, нужно немного подождать. Я скажу, когда будет всё')
     else:
         bot.send_message(message.chat.id, 'Напомню, жребий пал на [click me](tg://user?id={})'.format(addressee_user.telegram_id))
 
@@ -105,7 +105,7 @@ def build_victims(message):
     edges = event.build()
     edges = map(lambda _: (database.find_user(_[0]), database.find_user(_[1])), edges)
     for from_user, to_user in edges:
-        bot.send_message(from_user.telegram_id, 'Твой адресат [click me](tg://user?id={})'.format(to_user.telegram_id))
+        bot.send_message(from_user.telegram_id, 'Будешь сантой для [click me](tg://user?id={})'.format(to_user.telegram_id))
 
 
 @message_handler(commands=['approve'])
