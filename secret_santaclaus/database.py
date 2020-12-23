@@ -14,8 +14,6 @@ connection = psycopg2.connect(
     password=os.getenv('POSTGRES_PASSWORD'))
 
 
-class 
-
 class Model:
 
     @classmethod
