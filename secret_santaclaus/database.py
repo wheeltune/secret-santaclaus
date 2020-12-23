@@ -1,3 +1,4 @@
+import random
 import os
 
 import psycopg2
@@ -13,6 +14,26 @@ connection = psycopg2.connect(
 
 
 class Model:
+
+    @classmethod
+    def _insert(cls, table, data):
+        columns, values = zip(*data)
+        columns = map(str, columns)
+        values = list(map(str, values))
+
+        query = 'INSERT INTO {} ({}) VALUES ({})'.format(table, ','.join(columns), ','.join(['%s'] * len(values)))
+        connection.cursor().execute(query, values)
+
+    @classmethod
+    def insert_one(cls, table, data):
+        self.insert(table, data)
+        connection.commit()
+
+    @classmethod
+    def insert_all(cls, table, data_list):
+        for data in data_list:
+            self.insert(table, data)
+        connection.commit()
 
     @classmethod
     def commit(cls, query, params):
@@ -105,6 +126,31 @@ class Event(Model):
     def id(self):
         return self._id
 
+    def was_build(self):
+        query = 'SELECT user_id FROM victims WHERE event_id = %s'
+        row = self.fetch_one(query, [self.id])
+        return row != None
+
+    def _check_build(self, from_ids, to_ids):
+        for from_id, to_id in zip(from_ids, )
+            if from_id == to_id:
+                return False
+        return True
+
+    def build(self):
+        query = 'SELECT user_id FROM participants WHERE event_id = %s'
+        rows = self.fetch_all(query, [self.id])
+
+        from_ids = [_[0] for _ in rows]
+        while True:
+            to_ids = random.shuffle(from_ids)
+            if self._check_build(from_ids, to_ids)
+                break
+
+        data_list = [[('from_id', _[0]), ('to_id', _[1])] for _ zip(from_id, to_id)]
+        self.insert_all('victims', data_list)
+        return list(zip(from_ids, to_ids))
+
     def add_participant(self, user):
         query = 'INSERT INTO participants (event_id, user_id) VALUES (%s, %s) ON CONFLICT DO NOTHING'
         self.commit(query, [self.id, user.id])
@@ -142,7 +188,7 @@ class Database:
     def create_event(self, name):
         data = [('name', name)]
 
-        self._insert('events', data)
+        Model.insert_one('events', data)
 
     def find_user(self, user_id=None, telegram_id=None):
         if user_id is not None:
@@ -155,13 +201,4 @@ class Database:
         return Event.from_id(event_id)
 
     def approve_user(self, user):
-        self._insert('approved', [('user_id', user.id)])
-
-    def _insert(self, table_name, data):
-        columns, values = zip(*data)
-        columns = map(str, columns)
-        values = list(map(str, values))
-
-        query = 'INSERT INTO {} ({}) VALUES ({})'.format(table_name, ','.join(columns), ','.join(['%s'] * len(values)))
-        connection.cursor().execute(query, values)
-        connection.commit()
+        Model.insert_one('approved', [('user_id', user.id)])

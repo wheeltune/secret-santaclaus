@@ -93,14 +93,19 @@ def participants(message):
     bot.send_message(message.chat.id, '\n'.join(names))
 
 
-@message_handler(commands=['distribute'])
+@message_handler(commands=['build_victims'])
 @is_admin
-def distribute(message):
+def build_victims(message):
     event = find_event(1)
-    edges = event.build()
 
-    for from_id, to_id in edges:
-        bot.send_message(message.chat.id, 'Твой адресат [click me](tg://user?id={})'.format(target_user.id))
+    if event.was_build():
+        bot.send_message(message.chat.id, 'Событие уже построено')
+        return
+
+    edges = event.build()
+    # edges = map(lambda f, t: database.find_user(f), database.find_user(t), edges)
+    # for from_user, to_user in edges:
+    #     bot.send_message(from_user.id, 'Твой адресат [click me](tg://user?id={})'.format(to_user.id))
 
 
 @message_handler(commands=['approve'])
