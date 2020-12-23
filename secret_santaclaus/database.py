@@ -186,6 +186,13 @@ class Event(Model):
             return None
         return User.from_id(row[0])
 
+    def find_santa(self, user):
+        query = 'SELECT to_id FROM victims WHERE event_id = %s AND to_id = %s'
+        row = self.fetch_one(query, [self.id, user.id])
+        if row is None:
+            return None
+        return User.from_id(row[0])
+
     def find_interests(self, user):
         query = 'SELECT interests FROM interests WHERE event_id = %s AND user_id = %s'
         row = self.fetch_one(query, [self.id, user.id])

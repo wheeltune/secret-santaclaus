@@ -146,14 +146,14 @@ def do_set_interests(message):
     bot.send_message(message.chat.id, 'Понял, принял, записал')
     states[message.from_user.id] = State.NONE
 
-    addressee_user = event.find_victim(user)
-    if addressee_user is not None:
-        bot.send_message(addressee_user.telegram_id, 'Обновились пожелания для санты:')
-        interests = event.find_interests(addressee_user)
+    santa_user = event.find_santa(user)
+    if santa_user is not None:
+        bot.send_message(santa_user.telegram_id, 'Обновились пожелания для санты:')
+        interests = event.find_interests(user)
         if interests is None:
-            bot.send_message(addressee_user.telegram_id, 'Пожеланий пока нет(')
+            bot.send_message(santa_user.telegram_id, 'Пожеланий пока нет(')
         else:
-            bot.send_message(addressee_user.telegram_id, interests)
+            bot.send_message(santa_user.telegram_id, interests)
 
 
 @message_handler(commands=['participants'])
