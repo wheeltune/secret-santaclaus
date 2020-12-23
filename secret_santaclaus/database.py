@@ -22,16 +22,16 @@ class Model:
         columns = map(str, columns)
         values = list(map(str, values))
 
-        query = 'INSERT INTO {} ({}) VALUES ({}) ON CONFLICT {}'.format(table, ','.join(columns), ','.join(['%s'] * len(values)), on_conflict)
+        query = 'INSERT INTO {} ({}) VALUES ({}) ON CONFLICT DO {}'.format(table, ','.join(columns), ','.join(['%s'] * len(values)), on_conflict)
         connection.cursor().execute(query, values)
 
     @classmethod
-    def insert_one(cls, table, data, on_conflict='DO NOTHING'):
+    def insert_one(cls, table, data, on_conflict='NOTHING'):
         cls._insert(table, data, on_conflict)
         connection.commit()
 
     @classmethod
-    def insert_all(cls, table, data_list, on_conflict='DO NOTHING'):
+    def insert_all(cls, table, data_list, on_conflict='NOTHING'):
         for data in data_list:
             cls._insert(table, data)
         connection.commit()
