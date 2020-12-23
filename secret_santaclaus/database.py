@@ -17,21 +17,21 @@ connection = psycopg2.connect(
 class Model:
 
     @classmethod
-    def _insert(cls, table, data):
+    def _insert(cls, table, data, on_conflict):
         columns, values = zip(*data)
         columns = map(str, columns)
         values = list(map(str, values))
 
-        query = 'INSERT INTO {} ({}) VALUES ({})'.format(table, ','.join(columns), ','.join(['%s'] * len(values)))
+        query = 'INSERT INTO {} ({}) VALUES ({}) ON CONFLICT {}'.format(table, ','.join(columns), ','.join(['%s'] * len(values)), on_conflict)
         connection.cursor().execute(query, values)
 
     @classmethod
-    def insert_one(cls, table, data):
-        cls._insert(table, data)
+    def insert_one(cls, table, data, on_conflict='DO NOTHING'):
+        cls._insert(table, data, on_conflict)
         connection.commit()
 
     @classmethod
-    def insert_all(cls, table, data_list):
+    def insert_all(cls, table, data_list, on_conflict='DO NOTHING'):
         for data in data_list:
             cls._insert(table, data)
         connection.commit()
@@ -186,7 +186,7 @@ class Event(Model):
     def save_interests(self, user, interests):
         query = 'INSERT INTO interests (event_id, user_id, interests) VALUES (%s, %s) ON CONFLICT DO UPDATE'
         data = [('event_id', self.id), ('user_id', user.id), ('interests', interests)]
-        self.insert_one('victims', data)
+        self.insert_one('interests', data, 'UPDATE')
 
 
 class Database:
