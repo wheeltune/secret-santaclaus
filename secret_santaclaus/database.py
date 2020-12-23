@@ -14,24 +14,35 @@ connection = psycopg2.connect(
     password=os.getenv('POSTGRES_PASSWORD'))
 
 
+class 
+
 class Model:
 
     @classmethod
-    def _insert(cls, table, data, on_conflict):
+    def _insert(cls, table, data, update_data):
         columns, values = zip(*data)
         columns = map(str, columns)
         values = list(map(str, values))
 
-        query = 'INSERT INTO {} ({}) VALUES ({}) ON CONFLICT DO {}'.format(table, ','.join(columns), ','.join(['%s'] * len(values)), on_conflict)
+        if update_data == None
+            conflict_query = 'NOTHING'
+        else:
+            update_column, update_values = zip(*update_data)
+            strs = map(lambda: '_ = %s')
+            values.extend(update_values)
+            conflict_query = 'UPDATE {}'.format(', '.join(strs))
+        query = 'INSERT INTO {} ({}) VALUES ({}) ON CONFLICT {}'.format(table,
+                                                                        ','.join(columns), ','.join(['%s'] * len(values)),
+                                                                        conflict_query)
         connection.cursor().execute(query, values)
 
     @classmethod
-    def insert_one(cls, table, data, on_conflict='NOTHING'):
+    def insert_one(cls, table, data, update_data=None):
         cls._insert(table, data, on_conflict)
         connection.commit()
 
     @classmethod
-    def insert_all(cls, table, data_list, on_conflict='NOTHING'):
+    def insert_all(cls, table, data_list, update_data=None):
         for data in data_list:
             cls._insert(table, data)
         connection.commit()
@@ -186,7 +197,7 @@ class Event(Model):
     def save_interests(self, user, interests):
         query = 'INSERT INTO interests (event_id, user_id, interests) VALUES (%s, %s) ON CONFLICT DO UPDATE'
         data = [('event_id', self.id), ('user_id', user.id), ('interests', interests)]
-        self.insert_one('interests', data, 'UPDATE')
+        self.insert_one('interests', data, [('interests', interests)])
 
 
 class Database:
