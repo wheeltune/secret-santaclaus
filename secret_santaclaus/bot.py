@@ -19,6 +19,7 @@ states = dict()
 class State(enum.Enum):
     NONE = 0,
     APPROVE = 1
+    INTERESTS = 2
 
 
 def message_handler(*args, **kwargs):
@@ -76,6 +77,58 @@ def addressee(message):
         bot.send_message(message.chat.id, 'Похоже, что ещё не всё готово, нужно немного подождать. Я скажу, когда будет всё')
     else:
         bot.send_message(message.chat.id, 'Напомню, жребий пал на [click me](tg://user?id={})'.format(addressee_user.telegram_id))
+
+
+@message_handler(commands=['cancel'])
+@is_authorized
+def cancel(message):
+    states[message.from_user.id] = State.NONE
+
+
+@message_handler(commands=['my_interests'])
+@is_authorized
+def my_interests(message):
+    user = database.find_user(telegram_id=message.from_user.id)
+    event = database.find_event(1)
+    bot.send_message(message.chat.id, 'Твои пожелания:')
+    bot.send_message(message.chat.id, event.find_interests(user))
+
+
+@message_handler(commands=['santa_interests'])
+@is_authorized
+def santa_interests(message):
+    user = database.find_user(telegram_id=message.from_user.id)
+    event = database.find_event(1)
+    addressee_user = event.find_victim(user)
+
+    bot.send_message(message.chat.id, 'Пожелания для санты:')
+    bot.send_message(message.chat.id, event.find_interests(addressee_user))
+
+
+@message_handler(commands=['set_interests'])
+@is_authorized
+def set_interests(message):
+    bot.send_message(message.chat.id, 'Напиши свои пожелания, а я сообщю о них санте (только текстом)')
+    states[message.from_user.id] = State.INTERESTS
+
+
+@message_handler(func=lambda message: states.get(message.from_user.id, State.NONE) == State.INTERESTS)
+@is_authorized
+def do_set_interests(message):
+    if message.text is None:
+        bot.send_message(message.chat.id, 'Можно отправить только текст(')
+        return
+
+    user = database.find_user(telegram_id=message.from_user.id)
+    event = database.find_event(1)
+    addressee_user = event.find_victim(user)
+
+    event.save_interests(user, message.text)
+    bot.send_message(message.chat.id, 'Понял, принял, записал')
+    states[message.from_user.id] = State.NONE
+
+    bot.send_message(addressee_user.telegram_id, 'Обновились пожелания для санты:')
+    bot.send_message(addressee_user.telegram_id, event.find_interests(addressee_user))
 
 
 @message_handler(commands=['participants'])

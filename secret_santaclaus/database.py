@@ -176,6 +176,18 @@ class Event(Model):
             return None
         return User.from_id(row[0])
 
+    def find_interests(self, user):
+        query = 'SELECT interests FROM interests WHERE event_id = %s AND user_id = %s'
+        row = self.fetch_one(query, [self.id, user.id])
+        if row is None:
+            return None
+        return row[0]
+
+    def save_interests(self, user, interests):
+        query = 'INSERT INTO interests (event_id, user_id, interests) VALUES (%s, %s) ON CONFLICT DO UPDATE'
+        data = [('event_id', self.id), ('user_id', user.id), ('interests', interests)]
+        self.insert_one('victims', data)
+
 
 class Database:
 
