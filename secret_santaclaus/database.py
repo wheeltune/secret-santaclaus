@@ -1,3 +1,4 @@
+from copy import copy
 import random
 import os
 
@@ -26,13 +27,13 @@ class Model:
 
     @classmethod
     def insert_one(cls, table, data):
-        self.insert(table, data)
+        cls._insert(table, data)
         connection.commit()
 
     @classmethod
     def insert_all(cls, table, data_list):
         for data in data_list:
-            self.insert(table, data)
+            cls._insert(table, data)
         connection.commit()
 
     @classmethod
@@ -127,12 +128,12 @@ class Event(Model):
         return self._id
 
     def was_build(self):
-        query = 'SELECT user_id FROM victims WHERE event_id = %s'
+        query = 'SELECT from_id FROM victims WHERE event_id = %s'
         row = self.fetch_one(query, [self.id])
         return row != None
 
     def _check_build(self, from_ids, to_ids):
-        for from_id, to_id in zip(from_ids, )
+        for from_id, to_id in zip(from_ids, to_ids):
             if from_id == to_id:
                 return False
         return True
@@ -143,11 +144,12 @@ class Event(Model):
 
         from_ids = [_[0] for _ in rows]
         while True:
-            to_ids = random.shuffle(from_ids)
-            if self._check_build(from_ids, to_ids)
+            to_ids = copy(from_ids)
+            random.shuffle(to_ids)
+            if self._check_build(from_ids, to_ids):
                 break
 
-        data_list = [[('from_id', _[0]), ('to_id', _[1])] for _ zip(from_id, to_id)]
+        data_list = [[('event_id', self.id), ('from_id', _[0]), ('to_id', _[1])] for _ in zip(from_ids, to_ids)]
         self.insert_all('victims', data_list)
         return list(zip(from_ids, to_ids))
 

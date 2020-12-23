@@ -75,7 +75,7 @@ def addressee(message):
     if addressee_user is None:
         bot.send_message(message.chat.id, 'Похоже, что ещё не все собрались, нужно немного подождать. Я скажу, когда все будет готово')
     else:
-        bot.send_message(message.chat.id, 'Напомню, жребий пал на [click me](tg://user?id={})'.format(addressee_user.id))
+        bot.send_message(message.chat.id, 'Напомню, жребий пал на [click me](tg://user?id={})'.format(addressee_user.telegram_id))
 
 
 @message_handler(commands=['participants'])
@@ -96,16 +96,16 @@ def participants(message):
 @message_handler(commands=['build_victims'])
 @is_admin
 def build_victims(message):
-    event = find_event(1)
+    event = database.find_event(1)
 
     if event.was_build():
         bot.send_message(message.chat.id, 'Событие уже построено')
         return
 
     edges = event.build()
-    # edges = map(lambda f, t: database.find_user(f), database.find_user(t), edges)
-    # for from_user, to_user in edges:
-    #     bot.send_message(from_user.id, 'Твой адресат [click me](tg://user?id={})'.format(to_user.id))
+    edges = map(lambda _: (database.find_user(_[0]), database.find_user(_[1])), edges)
+    for from_user, to_user in edges:
+        bot.send_message(from_user.telegram_id, 'Твой адресат [click me](tg://user?id={})'.format(to_user.telegram_id))
 
 
 @message_handler(commands=['approve'])
